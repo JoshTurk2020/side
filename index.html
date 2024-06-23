@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mobile-Friendly Side Scroller</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            background-color: rgba(255, 255, 255, 0.5);
+            border: none;
+            border-radius: 50%;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div class="controls">
+        <button id="leftBtn" class="control-btn">←</button>
+        <button id="jumpBtn" class="control-btn">↑</button>
+        <button id="rightBtn" class="control-btn">→</button>
+    </div>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Set canvas size to window size
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        const player = {
+            x: 50,
+            y: 200,
+            width: 30,
+            height: 30,
+            speed: 5,
+            jumpForce: 10,
+            yVelocity: 0,
+            isJumping: false
+        };
+
+        const ground = {
+            y: canvas.height - 50
+        };
+
+        const obstacle = {
+            x: canvas.width,
+            y: canvas.height - 80,
+            width: 30,
+            height: 30
+        };
+
+        function drawPlayer() {
+            ctx.fillStyle = 'red';
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+        }
+
+        function drawGround() {
+            ctx.fillStyle = 'green';
+            ctx.fillRect(0, ground.y, canvas.width, canvas.height - ground.y);
+        }
+
+        function drawObstacle() {
+            ctx.fillStyle = 'blue';
+            ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+        }
+
+        function update() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            player.y += player.yVelocity;
+            player.yVelocity += 0.5; // Gravity
+
+            if (player.y + player.height > ground.y) {
+                player.y = ground.y - player.height;
+                player.yVelocity = 0;
+                player.isJumping = false;
+            }
+
+            obstacle.x -= 2;
+            if (obstacle.x + obstacle.width < 0) {
+                obstacle.x = canvas.width;
+            }
+
+            drawGround();
+            drawPlayer();
+            drawObstacle();
+
+            requestAnimationFrame(update);
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', (event) => {
+            switch (event.key) {
+                case 'ArrowLeft':
+                    player.x -= player.speed;
+                    break;
+                case 'ArrowRight':
+                    player.x += player.speed;
+                    break;
+                case 'ArrowUp':
+                case ' ':
+                    if (!player.isJumping) {
+                        player.yVelocity = -player.jumpForce;
+                        player.isJumping = true;
+                    }
+                    break;
+            }
+        });
+
+        // Touch controls
+        const leftBtn = document.getElementById('leftBtn');
+        const rightBtn = document.getElementById('rightBtn');
+        const jumpBtn = document.getElementById('jumpBtn');
+
+        function handleTouch(action) {
+            switch (action) {
+                case 'left':
+                    player.x -= player.speed;
+                    break;
+                case 'right':
+                    player.x += player.speed;
+                    break;
+                case 'jump':
+                    if (!player.isJumping) {
+                        player.yVelocity = -player.jumpForce;
+                        player.isJumping = true;
+                    }
+                    break;
+            }
+        }
+
+        ['touchstart', 'mousedown'].forEach(eventType => {
+            leftBtn.addEventListener(eventType, () => handleTouch('left'));
+            rightBtn.addEventListener(eventType, () => handleTouch('right'));
+            jumpBtn.addEventListener(eventType, () => handleTouch('jump'));
+        });
+
+        // Prevent default touch behavior
+        document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+
+        // Start the game loop
+        update();
+    </script>
+</body>
+</html>
